@@ -302,7 +302,7 @@ static int Nscale = 1;  /* This doesn't cause additional fluctuations (we alread
 	/*  Create a filename for this run */
 	
 
-       sprintf(outfile,"/project/badea/smartpix/danush/pixel_clusters_d%5.5d.out",fileind);
+       sprintf(outfile,"pixel_clusters_d%5.5d.out",fileind);
         
 	
 	if(ievent==0 && frun == 1) {
