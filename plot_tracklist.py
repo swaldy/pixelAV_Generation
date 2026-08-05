@@ -128,4 +128,16 @@ fig.suptitle(
 fig.tight_layout()
 fig.savefig(args.output, dpi=200, bbox_inches="tight")
 
+counts, edges = np.histogram(cot_beta, bins=100)
+print("cotBeta entries:", counts.sum())
+
+counts, edges = np.histogram(cot_alpha, bins=100)
+print("cotAlpha entries:", counts.sum())
+
+counts, edges = np.histogram(pt, bins=100)
+print("Signed pT entries:", counts.sum())
+
+counts, edges = np.histogram(np.abs(pt), bins=100)
+print("|pT| entries:", counts.sum())
+
 print(f"Saved plot: {args.output}")
