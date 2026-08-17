@@ -9,7 +9,7 @@
 #SBATCH --time=36:00:00
 #SBATCH --output=/home/cmspixelsim/Documents/sarah/pixelAV_Generation/binary_output_48x192_200ps/%A_%a.txt
 
-DATADIR=/home/cmspixelsim/Documents/sarah/pixelAV_Generation/binary_output_48x192_200ps
+DATADIR=/home/cmspixelsim/Documents/sarah/pixelAV_Generation
 
 FILEIND=$(printf "%05d" $((16400 + SLURM_ARRAY_TASK_ID)))
 
