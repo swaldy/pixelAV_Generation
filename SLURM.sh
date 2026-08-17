@@ -15,7 +15,7 @@ FILEIND=$(printf "%05d" $((16400 + SLURM_ARRAY_TASK_ID)))
 
 cd ${DATADIR}
 
-//home/cmspixelsim/Documents/sarah/pixelAV_Generation/ppixelav2_list_trkpy_n_2f_200ps_48x192 \
+/home/cmspixelsim/Documents/sarah/pixelAV_Generation/ppixelav2_list_trkpy_n_2f_200ps_48x192 \
     ${SLURM_ARRAY_TASK_ID} 5000
 
 gzip pixel_clusters_d${FILEIND}.out
