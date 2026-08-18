@@ -14,7 +14,7 @@ import sys
 import numpy as np
 
 def main():
-    path = sys.argv[1] if len(sys.argv) > 1 else "track_list.txt"
+    path = sys.argv[1] if len(sys.argv) > 1 else "track_list_400k_cotBeta_lt2.txt"
     print(f"Loading {path} ...")
 
     # Read in chunks to handle large files without hitting memory issues
