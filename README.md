@@ -1,5 +1,23 @@
 # pixelAV_Generation
-
+2M original tracks
+       │
+       │ filter_tracklist.py
+       │ |cotBeta| < 2
+       │ select 200,000
+       ▼
+track_list_200k_cotBeta_lt2.txt
+       │
+       │ copy
+       ▼
+track_list.txt
+       │
+       ▼
+PixelAV 48×192, 200 ps
+       │
+       ├── block 1:  tracks 1–5,000
+       ├── block 2:  tracks 5,001–10,000
+       ├── ...
+       └── block 40: tracks 195,001–200,000
 ## Step 1: get your track list
 Steps I have taken...
 
