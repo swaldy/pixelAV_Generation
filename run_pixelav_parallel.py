@@ -10,12 +10,12 @@ BASE_DIR = "/home/cmspixelsim/Documents/sarah/pixelAV_Generation"
 
 DATA_DIR = os.path.join(
     BASE_DIR,
-    "binary_output_48x192_200ps"
+    "binary_output_48x192_10ps"
 )
 
 BINARY = os.path.join(
     BASE_DIR,
-    "ppixelav2_list_trkpy_n_2f_200ps_48x192"
+    "ppixelav2_list_trkpy_n_2f_10ps_48x192"
 )
 
 # 200,000 tracks / 5,000 tracks per block = 40 blocks
