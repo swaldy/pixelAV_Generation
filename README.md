@@ -1,4 +1,5 @@
 # pixelAV_Generation
+```
 2M original tracks
        │
        │ filter_tracklist.py
@@ -18,6 +19,7 @@ PixelAV 48×192, 200 ps
        ├── block 2:  tracks 5,001–10,000
        ├── ...
        └── block 40: tracks 195,001–200,000
+```       
 ## Step 1: get your track list
 Steps I have taken...
 
