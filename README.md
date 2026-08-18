@@ -8,9 +8,6 @@
        ▼
 track_list_200k_cotBeta_lt2.txt
        │
-       │ copy
-       ▼
-track_list.txt
        │
        ▼
 PixelAV 48×192, 200 ps
