@@ -15,7 +15,7 @@ DATA_DIR = os.path.join(
 
 BINARY = os.path.join(
     BASE_DIR,
-    "ppixelav2_list_trkpy_n_2f_10ps_48x192"
+    "ppixelav_list_trkpy_n_2f_10ps_48x192"
 )
 
 # 200,000 tracks / 5,000 tracks per block = 40 blocks
