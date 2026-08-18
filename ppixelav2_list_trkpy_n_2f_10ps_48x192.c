@@ -220,9 +220,9 @@ static int Nscale = 1;  /* This doesn't cause additional fluctuations (we alread
 	
 	/*  read track list */
 	
-    icfp = fopen("track_list.txt", "r");
+    icfp = fopen("track_list_200k_cotBeta_lt2.txt", "r");
     if (icfp==NULL) {
-		printf("no track_list.txt file found/n");
+		printf("no track_list_200k_cotBeta_lt2.txt file found/n");
 		return 0;
     }
 	
