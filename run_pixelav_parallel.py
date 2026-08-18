@@ -118,7 +118,7 @@ def main():
             f"PixelAV binary not found:\n{BINARY}"
         )
 
-    tracklist = os.path.join(DATA_DIR, "track_list.txt")
+    tracklist = os.path.join(DATA_DIR, "track_list_200k_cotBeta_lt2.txt")
     ppixel_init = os.path.join(DATA_DIR, "ppixel2.init")
     wgt_init = os.path.join(DATA_DIR, "wgt_pot.init")
 
