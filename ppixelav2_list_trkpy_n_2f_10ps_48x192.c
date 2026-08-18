@@ -72,7 +72,7 @@
 
 /* Define the number of steps in the crrc response function */
 
-#define NCRRC 20
+#define NCRRC 400
 
 /* Table of constant values */
 
