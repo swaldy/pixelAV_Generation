@@ -15,3 +15,4 @@ python plot_tracklist.py \
   track_list_200k_cotBeta_lt2.txt \
   --output track_list_200k_distributions.png
 ```
+## Step 2: PixelAV dataset generation
