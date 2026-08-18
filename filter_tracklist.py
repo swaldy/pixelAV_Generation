@@ -14,6 +14,7 @@ Example:
 
 import sys
 import numpy as np
+import random as random
 
 
 def main():
@@ -32,7 +33,7 @@ def main():
 
     # col1 -> labels cotBeta (see column mapping in README)
     mask = np.abs(data[:, 0]) < max_cotbeta
-    filtered = data[mask][:n_rows]
+    filtered = random.sample(data[mask],k=n_rows)
     print(f"Rows with |cotBeta| < {max_cotbeta}: {mask.sum():,}")
     print(f"Saving first {len(filtered):,} rows to {output_file} ...")
 
