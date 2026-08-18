@@ -27,7 +27,7 @@ FILEBASE = 16400
 
 # Number of PixelAV jobs running simultaneously.
 # Start conservatively.
-MAX_PARALLEL = 4
+MAX_PARALLEL = 2
 
 
 def run_block(frun):
