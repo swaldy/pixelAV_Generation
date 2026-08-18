@@ -1,5 +1,6 @@
 # pixelAV_Generation
 
+## Step 1: get your track list
 Steps I have taken...
 
 I first ran this command: 
