@@ -10,7 +10,7 @@ track_list_200k_cotBeta_lt2.txt
        │
        │
        ▼
-PixelAV 48×192, 200 ps
+PixelAV 48×192, 10 ps
        │
        ├── block 1:  tracks 1–5,000
        ├── block 2:  tracks 5,001–10,000
