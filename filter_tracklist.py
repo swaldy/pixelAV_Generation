@@ -33,7 +33,10 @@ def main():
 
     # col1 -> labels cotBeta (see column mapping in README)
     mask = np.abs(data[:, 0]) < max_cotbeta
-    filtered = random.sample(data[mask],k=n_rows)
+    print(data[mask])
+    rng=np.random.default_rng()
+    #filtered=rng.choice(data[mask], size=n_rows,replace=False)
+    filtered=data[mask]
     print(f"Rows with |cotBeta| < {max_cotbeta}: {mask.sum():,}")
     print(f"Saving first {len(filtered):,} rows to {output_file} ...")
 
