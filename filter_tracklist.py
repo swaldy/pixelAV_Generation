@@ -38,7 +38,7 @@ def main():
     #filtered=rng.choice(data[mask], size=n_rows,replace=False)
     filtered=data[mask]
     print(f"Rows with |cotBeta| < {max_cotbeta}: {mask.sum():,}")
-    print(f"Saving {len(filtered):,} random rows to {output_file} ...")
+    #print(f"Saving {len(filtered):,} random rows to {output_file} ...")
     print(f"Saving {len(filtered):,} rows to {output_file} ...")
 
     np.savetxt(output_file, filtered, fmt='%.6f %.6f %.4f %d %.6f %.6f %.4f')
