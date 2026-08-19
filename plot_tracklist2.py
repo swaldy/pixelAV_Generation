@@ -121,7 +121,7 @@ print(
 pt_bins = np.linspace(
     pt.min(),
     pt.max(),
-    51
+    501
 )
 
 all_signed_counts, pt_edges = np.histogram(
@@ -155,7 +155,7 @@ signed_passing_fraction = np.divide(
 abs_pt_bins = np.linspace(
     abs_pt.min(),
     abs_pt.max(),
-    51
+    501
 )
 
 all_abs_counts, abs_pt_edges = np.histogram(
@@ -368,25 +368,25 @@ fig.savefig(
 
 counts, edges = np.histogram(
     cot_beta,
-    bins=100
+    bins=500
 )
 print("cotBeta entries:", counts.sum())
 
 counts, edges = np.histogram(
     cot_alpha,
-    bins=100
+    bins=500
 )
 print("cotAlpha entries:", counts.sum())
 
 counts, edges = np.histogram(
     pt,
-    bins=100
+    bins=500
 )
 print("Signed pT entries:", counts.sum())
 
 counts, edges = np.histogram(
     abs_pt,
-    bins=100
+    bins=500
 )
 print("|pT| entries:", counts.sum())
 
