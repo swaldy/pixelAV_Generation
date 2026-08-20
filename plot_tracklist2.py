@@ -425,31 +425,64 @@ fig.savefig(
 )
 
 # -------------------------------------------------------------------
-# Histogram sanity checks
+# Print number of tracks represented in each plot
 # -------------------------------------------------------------------
 
-counts, edges = np.histogram(
-    cot_beta,
-    bins=500
-)
-print("cotBeta entries:", counts.sum())
+n_cot_beta = cot_beta_counts.sum()
+n_cot_alpha = cot_alpha_counts.sum()
+n_signed_pt = pt_counts.sum()
+n_abs_pt = abs_pt_counts.sum()
 
-counts, edges = np.histogram(
-    cot_alpha,
-    bins=500
-)
-print("cotAlpha entries:", counts.sum())
+n_pass_signed_pt = pass_signed_counts.sum()
+n_pass_abs_pt = pass_abs_counts.sum()
 
-counts, edges = np.histogram(
-    pt,
-    bins=500
-)
-print("Signed pT entries:", counts.sum())
+print()
+print("--------------------------------------------------")
+print("Number of tracks represented in each plot")
+print("--------------------------------------------------")
 
-counts, edges = np.histogram(
-    abs_pt,
-    bins=500
+print(
+    f"cotBeta distribution:                  "
+    f"{n_cot_beta:,} tracks"
 )
-print("|pT| entries:", counts.sum())
+
+print(
+    f"cotAlpha distribution:                 "
+    f"{n_cot_alpha:,} tracks"
+)
+
+print(
+    f"Signed pT distribution:                "
+    f"{n_signed_pt:,} tracks"
+)
+
+print(
+    f"|pT| distribution:                     "
+    f"{n_abs_pt:,} tracks"
+)
+
+print(
+    f"Signed pT passing |cotBeta| < {cotbeta_limit}: "
+    f"{n_pass_signed_pt:,} tracks"
+)
+
+print(
+    f"|pT| passing |cotBeta| < {cotbeta_limit}:      "
+    f"{n_pass_abs_pt:,} tracks"
+)
+
+print("--------------------------------------------------")
+
+print(
+    f"Input track total:                     "
+    f"{len(data):,} tracks"
+)
+
+print(
+    f"Total passing |cotBeta| < {cotbeta_limit}:        "
+    f"{n_pass:,} tracks"
+)
+
+print("--------------------------------------------------")
 
 print(f"Saved plot: {args.output}")
