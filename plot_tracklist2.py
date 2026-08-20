@@ -361,57 +361,51 @@ axes[1, 1].grid(alpha=0.25)
 
 
 # -------------------------
-# Passing fraction vs signed pT
+# Tracks passing vs signed pT
 # -------------------------
 
 pt_bin_widths = np.diff(pt_edges)
 
 axes[2, 0].bar(
     pt_centers,
-    signed_passing_fraction,
+    pass_signed_counts,
     width=pt_bin_widths,
     align="center",
-    color="tab:blue",
     linewidth=0,
 )
 
 axes[2, 0].set_xlabel(r"Signed $p_T$ [GeV]")
-axes[2, 0].set_ylabel("Passing fraction")
+axes[2, 0].set_ylabel("Tracks")
 
 axes[2, 0].set_title(
-    rf"Fraction passing $|\mathrm{{cot}}\beta| < {cotbeta_limit}$"
+    rf"Tracks passing $|\mathrm{{cot}}\beta| < {cotbeta_limit}$"
 )
 
-axes[2, 0].set_ylim(0, 1.05)
 axes[2, 0].grid(alpha=0.25)
 
 
 # -------------------------
-# Passing fraction vs |pT|
+# Tracks passing vs |pT|
 # -------------------------
 
 abs_pt_bin_widths = np.diff(abs_pt_edges)
 
 axes[2, 1].bar(
     abs_pt_centers,
-    abs_passing_fraction,
+    pass_abs_counts,
     width=abs_pt_bin_widths,
     align="center",
-    color="tab:blue",
     linewidth=0,
 )
 
 axes[2, 1].set_xlabel(r"$|p_T|$ [GeV]")
-axes[2, 1].set_ylabel("Passing fraction")
+axes[2, 1].set_ylabel("Tracks")
 
 axes[2, 1].set_title(
-    rf"Fraction passing $|\mathrm{{cot}}\beta| < {cotbeta_limit}$"
+    rf"Tracks passing $|\mathrm{{cot}}\beta| < {cotbeta_limit}$"
 )
 
-axes[2, 1].set_ylim(0, 1.05)
 axes[2, 1].grid(alpha=0.25)
-
-
 # -------------------------------------------------------------------
 # Overall title
 # -------------------------------------------------------------------
