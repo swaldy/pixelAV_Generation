@@ -195,16 +195,76 @@ fig, axes = plt.subplots(
 )
 
 
+# -------------------------------------------------------------------
+# Calculate histogram bins for distributions
+# -------------------------------------------------------------------
+
+n_bins = 500
+
+
+# cotBeta
+cot_beta_counts, cot_beta_edges = np.histogram(
+    cot_beta,
+    bins=n_bins
+)
+
+cot_beta_centers = 0.5 * (
+    cot_beta_edges[:-1] + cot_beta_edges[1:]
+)
+
+cot_beta_widths = np.diff(cot_beta_edges)
+
+
+# cotAlpha
+cot_alpha_counts, cot_alpha_edges = np.histogram(
+    cot_alpha,
+    bins=n_bins
+)
+
+cot_alpha_centers = 0.5 * (
+    cot_alpha_edges[:-1] + cot_alpha_edges[1:]
+)
+
+cot_alpha_widths = np.diff(cot_alpha_edges)
+
+
+# Signed pT
+pt_counts, pt_hist_edges = np.histogram(
+    pt,
+    bins=n_bins
+)
+
+pt_hist_centers = 0.5 * (
+    pt_hist_edges[:-1] + pt_hist_edges[1:]
+)
+
+pt_hist_widths = np.diff(pt_hist_edges)
+
+
+# |pT|
+abs_pt_counts, abs_pt_hist_edges = np.histogram(
+    abs_pt,
+    bins=n_bins
+)
+
+abs_pt_hist_centers = 0.5 * (
+    abs_pt_hist_edges[:-1] + abs_pt_hist_edges[1:]
+)
+
+abs_pt_hist_widths = np.diff(abs_pt_hist_edges)
+
+
 # -------------------------
 # cotBeta distribution
 # -------------------------
 
-axes[0, 0].hist(
-    cot_beta,
-    bins=100,
-    histtype="step",
-    linewidth=1.5,
+axes[0, 0].bar(
+    cot_beta_centers,
+    cot_beta_counts,
+    width=cot_beta_widths,
+    align="center",
     color="tab:blue",
+    linewidth=0,
 )
 
 axes[0, 0].axvline(
@@ -235,12 +295,13 @@ axes[0, 0].grid(alpha=0.25)
 # cotAlpha distribution
 # -------------------------
 
-axes[0, 1].hist(
-    cot_alpha,
-    bins=100,
-    histtype="step",
-    linewidth=1.5,
+axes[0, 1].bar(
+    cot_alpha_centers,
+    cot_alpha_counts,
+    width=cot_alpha_widths,
+    align="center",
     color="tab:orange",
+    linewidth=0,
 )
 
 axes[0, 1].set_xlabel(r"$\mathrm{cot}\alpha$")
@@ -257,12 +318,13 @@ axes[0, 1].grid(alpha=0.25)
 # Signed pT distribution
 # -------------------------
 
-axes[1, 0].hist(
-    pt,
-    bins=100,
-    histtype="step",
-    linewidth=1.5,
+axes[1, 0].bar(
+    pt_hist_centers,
+    pt_counts,
+    width=pt_hist_widths,
+    align="center",
     color="tab:green",
+    linewidth=0,
 )
 
 axes[1, 0].set_xlabel(r"Signed $p_T$ [GeV]")
@@ -279,12 +341,13 @@ axes[1, 0].grid(alpha=0.25)
 # |pT| distribution
 # -------------------------
 
-axes[1, 1].hist(
-    abs_pt,
-    bins=100,
-    histtype="step",
-    linewidth=1.5,
+axes[1, 1].bar(
+    abs_pt_hist_centers,
+    abs_pt_counts,
+    width=abs_pt_hist_widths,
+    align="center",
     color="tab:red",
+    linewidth=0,
 )
 
 axes[1, 1].set_xlabel(r"$|p_T|$ [GeV]")
@@ -308,6 +371,7 @@ axes[2, 0].bar(
     signed_passing_fraction,
     width=pt_bin_widths,
     align="center",
+    color="tab:blue",
     linewidth=0,
 )
 
@@ -333,6 +397,7 @@ axes[2, 1].bar(
     abs_passing_fraction,
     width=abs_pt_bin_widths,
     align="center",
+    color="tab:blue",
     linewidth=0,
 )
 
@@ -345,6 +410,7 @@ axes[2, 1].set_title(
 
 axes[2, 1].set_ylim(0, 1.05)
 axes[2, 1].grid(alpha=0.25)
+
 
 # -------------------------------------------------------------------
 # Overall title
@@ -363,7 +429,6 @@ fig.savefig(
     dpi=200,
     bbox_inches="tight"
 )
-
 
 # -------------------------------------------------------------------
 # Histogram sanity checks
