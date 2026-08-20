@@ -301,12 +301,14 @@ axes[1, 1].grid(alpha=0.25)
 # Passing fraction vs signed pT
 # -------------------------
 
-axes[2, 0].plot(
+pt_bin_widths = np.diff(pt_edges)
+
+axes[2, 0].bar(
     pt_centers,
     signed_passing_fraction,
-    marker="o",
-    markersize=3,
-    linewidth=1.2,
+    width=pt_bin_widths,
+    align="center",
+    linewidth=0,
 )
 
 axes[2, 0].set_xlabel(r"Signed $p_T$ [GeV]")
@@ -324,12 +326,14 @@ axes[2, 0].grid(alpha=0.25)
 # Passing fraction vs |pT|
 # -------------------------
 
-axes[2, 1].plot(
+abs_pt_bin_widths = np.diff(abs_pt_edges)
+
+axes[2, 1].bar(
     abs_pt_centers,
     abs_passing_fraction,
-    marker="o",
-    markersize=3,
-    linewidth=1.2,
+    width=abs_pt_bin_widths,
+    align="center",
+    linewidth=0,
 )
 
 axes[2, 1].set_xlabel(r"$|p_T|$ [GeV]")
@@ -341,7 +345,6 @@ axes[2, 1].set_title(
 
 axes[2, 1].set_ylim(0, 1.05)
 axes[2, 1].grid(alpha=0.25)
-
 
 # -------------------------------------------------------------------
 # Overall title
