@@ -1,14 +1,14 @@
 """
-datagen_10ps_16x16.py
-Parquet conversion for 10ps 16x16 pixelAV datasets.
+datagen_10ps_48x192.py
+Parquet conversion for 10ps 48x192 pixelAV datasets.
 
 Changes vs upstream datagen.py (github.com/smart-pix/filter/semiprocessing_datagen/datagen.py):
-  - len(cur_slice) == 16*16  (was 13*21)
+  - len(cur_slice) == 48*192  (was 13*21)
   - len(cur_cluster) == 400  (was 20)
   - reads .out.gz directly (no manual gunzip needed)
 
 Usage (run from dataset directory):
-    python datagen_10ps_16x16.py <file_index>
+    python datagen_10ps_48x192.py <file_index>
 
 Example:
     cd /project/badea/smartpix/harshul/dataset_3sr_16x16_50x12P5_centeredIncidence_10ps_243k
@@ -94,7 +94,7 @@ def parseFile(filein):
             cur_row    = line.strip().split()
             cur_slice += [float(item) for item in cur_row]
 
-            if len(cur_slice) == 16 * 16:
+            if len(cur_slice) == 48 * 192:
                 cur_cluster.append(cur_slice)
 
             if len(cur_cluster) == 400:
@@ -113,7 +113,7 @@ def parseFile(filein):
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python datagen_10ps_16x16.py <file_index>")
+        print("Usage: python datagen_10ps_48x192.py <file_index>")
         sys.exit(1)
 
     index  = int(sys.argv[1])
