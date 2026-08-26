@@ -1,143 +1,164 @@
-"""
-datagen_10ps_48x192.py
-Parquet conversion for 10ps 48x192 pixelAV datasets.
-
-Changes vs upstream datagen.py (github.com/smart-pix/filter/semiprocessing_datagen/datagen.py):
-  - len(cur_slice) == 48*192  (was 13*21)
-  - len(cur_cluster) == 400  (was 20)
-  - reads .out.gz directly (no manual gunzip needed)
-
-Usage (run from dataset directory):
-    python datagen_10ps_48x192.py <file_index>
-
-Example:
-    cd /project/badea/smartpix/harshul/dataset_3sr_16x16_50x12P5_centeredIncidence_10ps_243k
-    python /home/harshul/smartpixels/datagen_10ps_16x16.py 16401
-"""
-
 import sys
-import gzip
-import os
 import numpy as np
 import pandas as pd
+import math
 
+def split(index,df1,df2,df3):
 
-def split(index, df1, df2, df3):
-    df1.columns = df1.columns.astype(str)
-    df2.columns = df2.columns.astype(str)
-    df3.columns = df3.columns.astype(str)
+        df1.columns = df1.columns.astype(str)
+        df2.columns = df2.columns.astype(str)
+        df3.columns = df3.columns.astype(str)
 
-    os.makedirs("unflipped", exist_ok=True)
+        # unflipped, all charge
+        df1[df1['z-entry']==100].to_parquet("unflipped/labels_d"+str(index)+".parquet")
+        df2[df1['z-entry']==100].to_parquet("unflipped/recon2D_d"+str(index)+".parquet")
+        df3[df1['z-entry']==100].to_parquet("unflipped/recon3D_d"+str(index)+".parquet")
 
-    mask = df1['z-entry'] == 100
-    tag  = "d" + str(index)
+def check_1pix_at_boundary(matrix, threshold=1):
+        # Define the boundary
+        boundaries = np.concatenate([matrix[0, :], matrix[-1, :], matrix[:, 0], matrix[:, -1]])
+        # Check for at least one pixel above the threshold
+        has_pixel_above_threshold = np.any(np.abs(boundaries) > threshold)
+        # Count and sum pixels above the threshold
+        count_above_threshold = np.sum(np.abs(boundaries) > threshold)
+        total_sum = np.sum(boundaries)
 
-    # NOTE: labels parquet does NOT include contained/peripheral cluster columns
-    # (e.g. original_atEdge, chargeOriginal_atEdge per Danush's PDF definition).
-    # Containment is currently computed only in validation scripts (plot_truth_individual.py),
-    # not persisted to the output parquets.
-    df1[mask].to_parquet(f"unflipped/labels_{tag}.parquet")
-    df2[mask].to_parquet(f"unflipped/recon2D_{tag}.parquet")
-    df3[mask].to_parquet(f"unflipped/recon3D_{tag}.parquet")
+        return has_pixel_above_threshold, count_above_threshold, total_sum
 
+def parseFile(filein,tag,nevents=-1):
 
-def parseFile(filein):
-    gz_path  = filein + ".gz"
-    out_path = filein
+        with open(filein) as f:
+                lines = f.readlines()
 
-    if os.path.exists(gz_path):
-        f = gzip.open(gz_path, 'rt')
-    elif os.path.exists(out_path):
-        f = open(out_path, 'r')
-    else:
-        raise FileNotFoundError(f"Neither {gz_path} nor {out_path} found")
+        header = lines[0].strip()
+        #header = lines.pop(0).strip()
+        pixelstats = lines[1].strip()
+        #pixelstats = lines.pop(0).strip()
 
-    lines = f.readlines()
-    f.close()
+        print("Header: ", header)
+        print("Pixelstats: ", pixelstats)
 
-    header     = lines[0].strip()
-    pixelstats = lines[1].strip()
-    print("Header:", header)
-    print("Pixelstats:", pixelstats)
+        readyToGetTruth = False
+        readyToGetTimeSlice = False
 
-    readyToGetTruth     = False
-    readyToGetTimeSlice = False
+        clusterctr = 0
+        cluster_truth =[]
+        timeslice = 0
+        cur_slice = []
+        cur_cluster = []
+        events = []
 
-    clusterctr    = 0
-    cluster_truth = []
-    timeslice     = 0
-    cur_slice     = []
-    cur_cluster   = []
-    events        = []
+        for line in lines:
+                ## Start of the cluster
+                if "<cluster>" in line:
+                        readyToGetTruth = True
+                        readyToGetTimeSlice = False
+                        clusterctr += 1
 
-    for line in lines:
-        if "<cluster>" in line:
-            readyToGetTruth     = True
-            readyToGetTimeSlice = False
-            clusterctr += 1
-            cur_cluster = []
-            timeslice   = 0
-            continue
+                        # Create an empty cluster
+                        cur_cluster = []
+                        timeslice = 0
+                        # move to next line
+                        continue
 
-        if readyToGetTruth:
-            cluster_truth.append(line.strip().split())
-            readyToGetTruth = False
-            continue
+                # the line after cluster is the truth
+                if readyToGetTruth:
+                        cluster_truth.append(line.strip().split())
+                        readyToGetTruth = False
 
-        if "time slice" in line:
-            readyToGetTimeSlice = True
-            cur_slice = []
-            timeslice += 1
-            continue
+                        # move to next line
+                        continue
 
-        if readyToGetTimeSlice:
-            cur_row    = line.strip().split()
-            cur_slice += [float(item) for item in cur_row]
+                ## Put cluster information into np array
+                if "time slice" in line:
+                        readyToGetTimeSlice = True
+                        cur_slice = []
+                        timeslice += 1
+                        # move to next line
+                        continue
 
-            if len(cur_slice) == 48 * 192:
-                cur_cluster.append(cur_slice)
+                if readyToGetTimeSlice:
+                        cur_row = line.strip().split()
+                        cur_slice += [float(item) for item in cur_row]
 
-            if len(cur_cluster) == 400:
-                events.append(cur_cluster)
-                readyToGetTimeSlice = False
+                        # When you have all elements of the 2D image (16x16 pixel grid):
+                        if len(cur_slice) == 48*192:
+                                cur_cluster.append(cur_slice)
 
-    print("Number of clusters =", len(cluster_truth))
-    print("Number of events =",   len(events))
-    print("Number of time slices in cluster =", len(events[0]))
+                        # When you have all time slices (4ns window, 10ps step = 400 slices):
+                        if len(cur_cluster) == 400:
+                                events.append(cur_cluster)
+                                readyToGetTimeSlice = False
 
-    arr_truth  = np.array(cluster_truth)
-    arr_events = np.array(events)
+        print("Number of clusters = ", len(cluster_truth))
+        print("Number of events = ",len(events))
+        print("Number of time slices in cluster = ", len(events[0]))
 
-    return arr_events, arr_truth
+        arr_truth = np.array(cluster_truth)
+        arr_events = np.array( events )
 
+        return arr_events, arr_truth
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python datagen_10ps_48x192.py <file_index>")
-        sys.exit(1)
+        row_size, col_size = 48, 192
+        boundary_charge_threshold = 1 # e-; threshold for charge at the boundary to be considered as a boundary charge
 
-    index  = int(sys.argv[1])
-    tag    = "d" + str(index)
-    arr_events, arr_truth = parseFile(filein=f"./pixel_clusters_d{index}.out")
+        index = int(sys.argv[1])
+        tag = "d"+str(index)
+        inputdir = "./"
+        arr_events, arr_truth = parseFile(filein=inputdir+"pixel_clusters_d"+str(index)+".out",tag=tag)
 
-    df = pd.DataFrame(arr_truth,
-                      columns=['x-entry', 'y-entry', 'z-entry',
-                               'n_x', 'n_y', 'n_z',
-                               'number_eh_pairs', 'y-local', 'pt'])
-    for col in df.columns:
-        df[col] = df[col].astype(float)
+        #truth quantities - all are dumped to DF
+        df = pd.DataFrame(arr_truth, columns = ['x-entry', 'y-entry','z-entry', 'n_x', 'n_y', 'n_z', 'number_eh_pairs', 'y-local', 'pt'])
+        cols = df.columns
+        for col in cols:
+                df[col] = df[col].astype(float)
 
-    sensor_thickness = 100  # um
-    df['cotAlpha']   = df['n_x'] / df['n_z']
-    df['cotBeta']    = df['n_y'] / df['n_z']
-    df['y-midplane'] = df['y-entry'] + df['cotBeta']  * (sensor_thickness / 2 - df['z-entry'])
-    df['x-midplane'] = df['x-entry'] + df['cotAlpha'] * (sensor_thickness / 2 - df['z-entry'])
+        df['cotAlpha'] = df['n_x']/df['n_z']
+        df['cotBeta'] = df['n_y']/df['n_z']
 
-    df2 = pd.DataFrame([np.array(e[-1]).flatten() for e in arr_events])
-    df3 = pd.DataFrame([np.array(e).flatten()     for e in arr_events])
+        sensor_thickness = 100 #um
+        df['y-midplane'] = df['y-entry'] + df['cotBeta']*(sensor_thickness/2 - df['z-entry'])
+        df['x-midplane'] = df['x-entry'] + df['cotAlpha']*(sensor_thickness/2 - df['z-entry'])
+        df['original_atEdge'] = False
+        df['chargeOriginal_atEdge'] = 0
+        df['nPixOriginalAbove1e_atEdge'] = 0
 
-    split(index, df, df2, df3)
+        print("The shape of the event array: ", arr_events.shape)
+        print("The ndim of the event array: ", arr_events.ndim)
+        print("The dtype of the event array: ", arr_events.dtype)
+        print("The size of the event array: ", arr_events.size)
+#        print("The max value in the array is: ", np.amax(arr_events))
+        # print("The shape of the truth array: ", arr_truth.shape)
 
+        df2 = {}
+        df2list = []
+
+        df3 = {}
+        df3list = []
+
+        for i, e in enumerate(arr_events):
+
+                # Only last time slice
+                df2list.append(np.array(e[-1]).flatten())
+                matrix = np.array(e[-1])
+                assert matrix.shape[0] == row_size * col_size
+
+                has_pixel_above_threshold_1pix, count_above_threshold_1pix, total_sum_1pix = check_1pix_at_boundary(matrix.reshape(row_size, col_size), boundary_charge_threshold)
+                if has_pixel_above_threshold_1pix:
+                        df.loc[i, 'original_atEdge'] = True
+                        # Following columns are added to the df if has_pixel_above_threshold_1pix is True. Could add them if has_pixel_above_threshold_1pix is False, but would be too small of a charge at the edge to treat as relevant.
+                        df.loc[i, 'chargeOriginal_atEdge'] = total_sum_1pix
+                        df.loc[i, 'nPixOriginalAbove1e_atEdge'] = count_above_threshold_1pix
+
+                # All time slices
+                df3list.append(np.array(e).flatten())
+
+        df2 = pd.DataFrame(df2list)
+        df3 = pd.DataFrame(df3list)
+
+        # split into flipped/unflipped, pos/neg charge
+        split(index,df,df2,df3)
 
 if __name__ == "__main__":
     main()
