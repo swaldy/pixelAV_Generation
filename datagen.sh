@@ -8,9 +8,8 @@ i=$1
 
 source /cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc13-opt/setup.sh
 
-INPUT_EOS_DIR=/eos/project/s/smartpix-box/pixelAV_datasets/unshuffled_DO_NOT_DELETE/temporary/dataset_3srb_16x16_50x12P5_centeredIncidence_10ps_300k
-outdir=/eos/project/s/smartpix-box/pixelAV_datasets/unshuffled_DO_NOT_DELETE/temporary/dataset_3srb_16x16_50x12P5_centeredIncidence_10ps_300k/dataset_3srb_16x16_50x12P5_centeredIncidence_10ps_300k_parquets/
-
+INPUT_EOS_DIR=/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps
+outdir=/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps/parquet_files
 mkdir -p unflipped
 
 xrdcp root://eosproject.cern.ch/$INPUT_EOS_DIR/pixel_clusters_d${i}.out.gz pixel_clusters_d${i}.out.gz
