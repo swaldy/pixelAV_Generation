@@ -12,7 +12,7 @@ def main():
     os.makedirs(logdir, exist_ok=True)
     print(f"Logs will be written to: {logdir}")
 
-    for i in range(16401,16481):
+    for i in range(16401,16440):
         subfile = f"{logdir}/d{i}.sub"
         f = open(subfile,"w")
 
@@ -20,7 +20,7 @@ def main():
         f.write("executable              = datagen.sh \n")
         f.write("arguments               = "+str(i)+" \n")
         f.write("request_memory          = 40 GB \n")
-        f.write("transfer_input_files    = datagen.py, datagen.sh \n")
+        f.write("transfer_input_files    = datagen_10ps_48_192.py, datagen.sh \n")
         f.write("transfer_output_files   = \"\" \n")
         f.write(f"output                  = {logdir}/d{i}.out \n")
         f.write(f"error                   = {logdir}/d{i}.err \n")
