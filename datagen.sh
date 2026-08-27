@@ -17,7 +17,7 @@ pwd
 
 gunzip pixel_clusters_d${i}.out.gz
 
-python3 datagen.py $i
+python3 datagen_10ps_48x192.py $i
 
 xrdcp -f unflipped/labels_d${i}.parquet root://eosproject.cern.ch/$outdir/unflipped/labels_d${i}.parquet
 xrdcp -f unflipped/recon2D_d${i}.parquet root://eosproject.cern.ch/$outdir/unflipped/recon2D_d${i}.parquet
