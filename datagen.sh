@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 # datagen.sh
 # Fetches a raw pixel_clusters .out.gz file from EOS, runs datagen.py to add the
 # contained-cluster columns, and pushes the updated labels/recon2D/recon3D parquet
