@@ -20,7 +20,7 @@ def main():
         f.write("universe                = vanilla \n")
         f.write("executable              = datagen.sh \n")
         f.write("arguments               = "+str(i)+" \n")
-        f.write("request_memory          = 80 GB \n")
+        f.write("request_memory          = 128 GB \n")
         f.write("transfer_input_files    = datagen_10ps_48x192.py, datagen.sh \n")
         f.write("transfer_output_files   = \"\" \n")
         f.write(f"output                  = {logdir}/d{i}.out \n")
