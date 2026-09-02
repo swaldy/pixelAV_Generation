@@ -12,7 +12,8 @@ def main():
     os.makedirs(logdir, exist_ok=True)
     print(f"Logs will be written to: {logdir}")
 
-    for i in range(16401,16440):
+    #for i in range(16401,16440):
+    for i in [16401]:
         subfile = f"{logdir}/d{i}.sub"
         f = open(subfile,"w")
 
