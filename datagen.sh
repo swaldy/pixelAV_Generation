@@ -4,7 +4,8 @@
 # contained-cluster columns, and pushes the updated labels/recon2D/recon3D parquet
 # files back to EOS, replacing the existing (column-less) versions.
 
-i=$1
+#i=$1
+/usr/bin/time -v python3 datagen_10ps_48x192.py "$i"
 
 source /cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc13-opt/setup.sh
 
