@@ -6,7 +6,7 @@
 # files back to EOS, replacing the existing (column-less) versions.
 
 i=$1
-#/usr/bin/time -v python3 datagen_10ps_48x192.py "$i"
+#/usr/bin/time -v python3 datagen_better_memory_10ps_48x192.py "$i"
 
 source /cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc13-opt/setup.sh
 
@@ -19,7 +19,7 @@ pwd
 
 gunzip pixel_clusters_d${i}.out.gz
 
-python3 datagen_10ps_48x192.py $i
+python3 datagen_better_memory_10ps_48x192.py $i
 
 xrdcp -f unflipped/labels_d${i}.parquet root://eosproject.cern.ch/$outdir/unflipped/labels_d${i}.parquet
 xrdcp -f unflipped/recon2D_d${i}.parquet root://eosproject.cern.ch/$outdir/unflipped/recon2D_d${i}.parquet
