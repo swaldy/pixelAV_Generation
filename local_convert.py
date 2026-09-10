@@ -109,7 +109,12 @@ def charge_table(values, schema):
     column = pa.ListArray.from_arrays(pa.array([0, flat.size], type=pa.int32()),
                                     pa.array(flat, type=pa.float64()))
     return pa.Table.from_arrays([column], schema=schema)
-
+         
+def select_compression():
+    for codec in ('zstd', 'snappy', 'gzip'):
+        if pa.Codec.is_available(codec):
+            return codec
+    return 'NONE'
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
@@ -131,6 +136,8 @@ def main(argv=None):
     for name in names:
         if (target / name).exists():
             parser.error(f'Output exists: {target / name}; choose a new --output-dir')
+    compression = select_compression()
+    print(f'Parquet compression: {compression}', flush=True)
     schemas = [LABEL_SCHEMA, charge_schema(SHAPE[1:]), charge_schema(SHAPE)]
     processed = written = 0
     # Only promote complete outputs after all requested events have been converted.
@@ -138,7 +145,7 @@ def main(argv=None):
         paths = [Path(temporary) / name for name in names]
         with ExitStack() as stack:
             writers = [stack.enter_context(pq.ParquetWriter(
-                path, schema, compression='zstd', use_dictionary=False,
+                path, schema, compression=compression, use_dictionary=False,
                 write_batch_size=65536)) for path, schema in zip(paths, schemas)]
             events = iter_events(args.input)
             stack.callback(events.close)
