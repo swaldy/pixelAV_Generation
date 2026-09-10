@@ -28,7 +28,7 @@ def check_1pix_at_boundary(matrix, threshold=1):
 def parseFile(filein,tag,nevents=-1):
 
         with open(filein) as f:
-                lines = f.readlines()
+                lines = f.readlines() #PROBLEM: This loads every line of the decompressed file into RAM simultaneously.
 
         header = lines[0].strip()
         #header = lines.pop(0).strip()
