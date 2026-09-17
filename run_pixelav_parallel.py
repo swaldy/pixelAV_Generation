@@ -27,7 +27,7 @@ FILEBASE = 16400
 
 # Number of PixelAV jobs running simultaneously.
 # Start conservatively.
-MAX_PARALLEL = 2
+MAX_PARALLEL = 4
 
 
 def run_block(frun):
@@ -129,7 +129,7 @@ def main():
             )
 
     print("=" * 60)
-    print("PixelAV 48x192 / 200 ps production")
+    print("PixelAV 48x192 / 10 ps production")
     print("=" * 60)
     print(f"Binary:             {BINARY}")
     print(f"Dataset directory:  {DATA_DIR}")
