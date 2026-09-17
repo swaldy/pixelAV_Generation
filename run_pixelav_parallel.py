@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # Configuration
 # ============================================================
 
-BASE_DIR = "/home/cmspixelsim/Documents/sarah/pixelAV_Generation"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATA_DIR = os.path.join(
     BASE_DIR,
