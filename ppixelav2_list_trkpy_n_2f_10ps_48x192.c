@@ -346,11 +346,22 @@ static int Nscale = 1;  /* This doesn't cause additional fluctuations (we alread
 		//vect[0] = 4.*xsize * (rvec[0] - 0.5) + (vect[2] - thick/2.)*locdir[0]/locdir[2];
 		//vect[1] = 4.*ysize * (rvec[1] - 0.5) + (vect[2] - thick/2.)*locdir[1]/locdir[2];
 		// DS - shift the incident positions to center of pixel matrix
-		vect[0] = 0.5*xsize + 4.*xsize * (rvec[0] - 0.5) + (vect[2] - thick/2.)*locdir[0]/locdir[2];
-                vect[1] = 0.5*ysize + 4.*ysize * (rvec[1] - 0.5) + (vect[2] - thick/2.)*locdir[1]/locdir[2];
-		vect[3] = locdir[0]*ppiontrack[ievent];
-		vect[4] = locdir[1]*ppiontrack[ievent];
-		vect[5] = locdir[2]*ppiontrack[ievent];
+		//vect[0] = 0.5*xsize + 4.*xsize * (rvec[0] - 0.5) + (vect[2] - thick/2.)*locdir[0]/locdir[2];
+        //        vect[1] = 0.5*ysize + 4.*ysize * (rvec[1] - 0.5) + (vect[2] - thick/2.)*locdir[1]/locdir[2];
+		//vect[3] = locdir[0]*ppiontrack[ievent];
+		//vect[4] = locdir[1]*ppiontrack[ievent];
+		//vect[5] = locdir[2]*ppiontrack[ievent];
+
+		// Uniformly sample track crossing positions across the full pixel matrix
+		// at the sensor midplane, then project to the entrance surface.
+
+		vect[0] = 0.5*xsize + TXSIZE*xsize * (rvec[0] - 0.5) + (vect[2] - thick/2.) * locdir[0]/locdir[2];
+		vect[1] = 0.5*ysize + TYSIZE*ysize * (rvec[1] - 0.5) + (vect[2] - thick/2.) * locdir[1]/locdir[2];
+
+		// Momentum components remain unchanged.
+		vect[3] = locdir[0] * ppiontrack[ievent];
+		vect[4] = locdir[1] * ppiontrack[ievent];
+		vect[5] = locdir[2] * ppiontrack[ievent];
 			   		
 /*  Set Bfield z-direction for this event */
 		
