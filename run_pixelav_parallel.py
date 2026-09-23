@@ -8,7 +8,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DATA_DIR = "./pixelav_48x192_10ps/gzip_files_48_192_center"
+#DATA_DIR = "./pixelav_48x192_10ps/gzip_files_48_192_center"
+DATA_DIR = "/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps/gzip_files_48_192_center"
 
 BINARY = os.path.join(
     BASE_DIR,
