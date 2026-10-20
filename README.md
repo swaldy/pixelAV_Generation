@@ -51,3 +51,9 @@ use the python script i made
 ```
 python3 run_pixelav_parallel.py
 ```
+
+depending on where you ran this, you might need to scp all these files to eos lxplus. next steps require lxplus.
+
+## Step 3: Convert files
+
+
