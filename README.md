@@ -56,4 +56,7 @@ depending on where you ran this, you might need to scp all these files to eos lx
 
 ## Step 3: Convert files
 
-
+test a few first on condor
+```
+python3 submit.py --range 16401 16403 --max-events 5 --flavour espresso --disk-gb 10
+```
