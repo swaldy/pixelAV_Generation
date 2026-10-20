@@ -8,7 +8,10 @@ import subprocess
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--index', type=int, default=16401)
+    parser.add_argument('--index', type=int, action='append', default=None,
+                        help='One file index; repeat for several (default: 16401)')
+    parser.add_argument('--range', nargs=2, type=int, metavar=('FIRST', 'LAST'),
+                        help='Inclusive index range, e.g. --range 16401 16440')
     parser.add_argument('--max-events', type=int, default=5,
                         help='Input events to process (default: 5; 0: entire file)')
     parser.add_argument('--memory-gb', type=int, default=8)
