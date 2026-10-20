@@ -22,9 +22,9 @@ ulimit -c 0
 endpoint=root://eosuser.cern.ch
 base_dir=/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps
 input_dir="$base_dir/gzip_files_48_192_center"
+# Unique run directory separates list-column outputs from legacy Parquet files;
+# kept out of input_dir so outputs never mix with the gzip inputs.
 remote_dir="$base_dir/parquet_streaming/$run_id/unflipped"
-# Unique run directory separates list-column outputs from legacy Parquet files.
-remote_dir="$input_dir/parquet_streaming/$run_id/unflipped"
 input_file="pixel_clusters_d${i}.out.gz"
 echo "Worker: $(hostname); directory: $PWD; index: $i; max-events: $max_events"
 python3 -c 'import sys, numpy, pyarrow; print(sys.version); print("NumPy", numpy.__version__, "PyArrow", pyarrow.__version__)'
