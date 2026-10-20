@@ -20,7 +20,9 @@ export ARROW_NUM_THREADS=1
 ulimit -c 0
 
 endpoint=root://eosuser.cern.ch
-input_dir=/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps
+base_dir=/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps
+input_dir="$base_dir/gzip_files_48_192_center"
+remote_dir="$base_dir/parquet_streaming/$run_id/unflipped"
 # Unique run directory separates list-column outputs from legacy Parquet files.
 remote_dir="$input_dir/parquet_streaming/$run_id/unflipped"
 input_file="pixel_clusters_d${i}.out.gz"
