@@ -2,7 +2,7 @@
 import argparse
 from contextlib import ExitStack
 import gzip
-from itertools import islice
+from itertools import chain, islice
 from pathlib import Path
 import re
 import tempfile
@@ -26,11 +26,22 @@ def iter_events(path):
     """Yield one validated event; never retain previous events or full input text."""
     opener = gzip.open if path.suffix == '.gz' else open
     with opener(path, 'rt') as source:
-        header, stats = source.readline(), source.readline()
-        if not header or not stats:
-            raise ValueError('Missing input header or pixel metadata')
-        print('Header:', header.strip(), flush=True)
-        print('Pixelstats:', stats.strip(), flush=True)
+# The C driver writes the two header lines only for frun == 1, so every
+        # block except d<filebase+1> starts directly at the first <cluster>.
+        first = source.readline()
+        if not first:
+            raise ValueError('Empty input file')
+        if first.strip() == '<cluster>':
+            print('Header: none (file starts at first cluster)', flush=True)
+            prologue, first_line_number = [first], 1
+        else:
+            stats = source.readline()
+            if not stats:
+                raise ValueError('Missing input header or pixel metadata')
+            print('Header:', first.strip(), flush=True)
+            print('Pixelstats:', stats.strip(), flush=True)
+            prologue, first_line_number = [], 3
+        lines = chain(prologue, source)
         event = None
         truth = None
         need_truth = False
