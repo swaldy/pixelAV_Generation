@@ -17,7 +17,12 @@ def main():
     parser.add_argument('--memory-gb', type=int, default=8)
     parser.add_argument('--disk-gb', type=int, default=100,
                         help='Scratch space including input and all outputs')
-    parser.add_argument('--flavour', choices=['longlunch', 'workday', 'tomorrow'], default='workday')
+    parser.add_argument('--flavour',
+                        choices=['espresso', 'microcentury', 'longlunch', 'workday',
+                                 'tomorrow', 'testmatch', 'nextweek'],
+                        default='workday')
+    parser.add_argument('--run-id', default=None,
+                        help='Reuse an existing run directory instead of making a new one')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
     if args.index < 1 or args.max_events < 0 or args.memory_gb < 1 or args.disk_gb < 1:
