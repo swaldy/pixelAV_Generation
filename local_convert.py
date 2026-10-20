@@ -48,7 +48,7 @@ def iter_events(path):
         time_index = -1
         offset = 0
         event_number = 0
-        for line_number, line in enumerate(source, 3):
+        for line_number, line in enumerate(lines, first_line_number):
             text = line.strip()
             if not text:
                 continue
