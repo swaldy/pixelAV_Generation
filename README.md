@@ -60,3 +60,8 @@ test a few first on condor
 ```
 python3 submit.py --range 16401 16403 --max-events 5 --flavour espresso --disk-gb 10
 ```
+now all 40 files...
+
+```
+python3 submit.py --range 16401 16440 --max-events 0 --flavour tomorrow --disk-gb 64
+```
