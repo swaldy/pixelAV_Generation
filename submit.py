@@ -42,14 +42,22 @@ def main():
     for name in ('datagen.sh', 'local_convert.py'):
         if not (repo / name).is_file():
             parser.error(f'Missing {repo / name}')
-    run_id = datetime.now().strftime('run_%Y%m%d_%H%M%S_%f')
+    run_id = args.run_id or datetime.now().strftime('run_%Y%m%d_%H%M%S_%f')
+    if not run_id.startswith('run_'):
+        parser.error('--run-id must start with "run_" (datagen.sh validates it)')
+    logdir = repo / 'logs' / run_id
+    logdir.mkdir(parents=True, exist_ok=True)
+    relative = logdir.relative_to(repo)
+    tag = f'd{indices[0]}' if len(indices) == 1 else f'd{indices[0]}_d{indices[-1]}'
+    submit_file = logdir / f'{tag}.sub'
+    queue = ' '.join(str(i) for i in indices)
     logdir = repo / 'logs' / run_id
     logdir.mkdir(parents=True)
     relative = logdir.relative_to(repo)
     submit_file = logdir / f'd{args.index}.sub'
     submit_file.write_text(f'''universe                = vanilla
 executable              = datagen.sh
-arguments               = {args.index} {args.max_events} {run_id}
+arguments               = $(index) {args.max_events} {run_id}
 request_cpus            = 1
 request_memory          = {args.memory_gb} GB
 request_disk            = {args.disk_gb} GB
@@ -57,14 +65,16 @@ should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT
 transfer_input_files    = local_convert.py
 transfer_output_files   = ""
-output                  = {relative}/d{args.index}.out
-error                   = {relative}/d{args.index}.err
-log                     = {relative}/d{args.index}.log
+output                  = {relative}/d$(index).out
+error                   = {relative}/d$(index).err
+log                     = {relative}/d$(index).log
 +JobFlavour             = "{args.flavour}"
-queue 1
+queue index in ({queue})
 ''')
     print(f'Submit file: {submit_file}', flush=True)
-    print(f'EOS outputs: /eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps/parquet_streaming/{run_id}/unflipped', flush=True)
+    print(f'Indices    : {len(indices)} job(s): {indices[0]}..{indices[-1]}', flush=True)
+    print('EOS outputs: /eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps/'
+          f'parquet_streaming/{run_id}/unflipped', flush=True)
     if args.dry_run:
         print('Dry run: no job submitted.', flush=True)
         print(submit_file.read_text())
