@@ -25,8 +25,19 @@ def main():
                         help='Reuse an existing run directory instead of making a new one')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
-    if args.index < 1 or args.max_events < 0 or args.memory_gb < 1 or args.disk_gb < 1:
-        parser.error('Index and resource requests must be positive; max-events must be nonnegative')
+    if args.index and args.range:
+        parser.error('Use --index or --range, not both')
+    if args.range:
+        first, last = args.range
+        if first < 1 or last < first:
+            parser.error('--range must be two ascending positive integers')
+        indices = list(range(first, last + 1))
+    else:
+        indices = sorted(set(args.index or [16401]))
+    if any(i < 1 for i in indices):
+        parser.error('Indices must be positive')
+    if args.max_events < 0 or args.memory_gb < 1 or args.disk_gb < 1:
+        parser.error('Resource requests must be positive; max-events must be nonnegative')
     repo = Path(__file__).resolve().parent
     for name in ('datagen.sh', 'local_convert.py'):
         if not (repo / name).is_file():
