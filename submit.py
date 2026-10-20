@@ -52,7 +52,7 @@ def main():
     submit_file = logdir / f'{tag}.sub'
     queue = ' '.join(str(i) for i in indices)
     logdir = repo / 'logs' / run_id
-    logdir.mkdir(parents=True)
+    logdir.mkdir(parents=True, exist_ok=True)
     relative = logdir.relative_to(repo)
     submit_file = logdir / f'd{args.index}.sub'
     submit_file.write_text(f'''universe                = vanilla
