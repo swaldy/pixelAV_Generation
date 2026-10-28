@@ -1,4 +1,8 @@
 # pixelAV_Generation
+General things...
+-pixel sizes are 50 x 12P5 and 100 micrometers thick
+-tracks can generate on whole grid (not restricted to some radius from the center)
+-grid size is 48x192
 ```
 2M original tracks
        │
