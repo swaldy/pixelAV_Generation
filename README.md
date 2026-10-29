@@ -72,3 +72,9 @@ now all 40 files...
 ```
 python3 submit.py --range 16401 16440 --max-events 0 --flavour tomorrow --disk-gb 64
 ```
+## Step 4: Validate the Dataset
+
+```
+python3 prep_size_inputs.py /eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps/parquet_streaming/<run_id>/unflipped \
+       --first 16401 --last 16440 --output-dir prepared_48x192
+```
