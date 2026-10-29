@@ -32,12 +32,19 @@ Usage (lxplus or SWAN, where /eos/user is mounted):
         /eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps/parquet_streaming/<run_id>/unflipped \\
         --first 16401 --last 16440 --output-dir prepared_48x192
  
+Each finished file is saved under OUTPUT_DIR/per_file/, so if a run is
+interrupted (Ctrl-C), running the same command again skips the files already
+done (use --no-cache to redo everything). --check-3d 0 skips the recon3D
+spot check, which is the only step that touches the large recon3D files.
+ 
 Exit status is 1 if any check FAILs, 0 otherwise.
 """
 import argparse
+import json
 from pathlib import Path
 import re
 import sys
+import time
  
 import numpy as np
 import pandas as pd
@@ -95,6 +102,20 @@ def find_indices(input_dir, first, last):
     if found:
         return list(range(found[0], found[-1] + 1))   # so gaps are reported
     return []
+ 
+ 
+CACHE_VERSION = 3      # bump when the checks or output columns change
+ 
+ 
+def cache_key(args, index):
+    """Identifies one file's result: options + size/mtime of every input file."""
+    sig = {}
+    for name in (f'labels_d{index}.parquet', f'recon2D_d{index}.parquet',
+                 f'recon3D_d{index}.parquet', f'SUCCESS_d{index}.txt'):
+        p = args.input_dir / name
+        sig[name] = [p.stat().st_size, int(p.stat().st_mtime)] if p.is_file() else None
+    return {'version': CACHE_VERSION, 'threshold': args.threshold, 'check_3d': args.check_3d,
+            'files': sig}
  
  
 def read_success(input_dir, index):
@@ -156,13 +177,15 @@ def analyse_recon2d(batch, threshold):
     out['atEdge'] = above.any(axis=1)
     out['nPixAbove1e_atEdge'] = above.sum(axis=1).astype(np.int64)
     out['charge_atEdge'] = np.where(out['atEdge'], border.sum(axis=1), 0.0)
-    # Reproduce the converter's stored flags (transposed reshape, duplicated corners).
-    m = batch.reshape(n, NX, NY)
-    legacy = np.concatenate([m[:, 0, :], m[:, -1, :], m[:, :, 0], m[:, :, -1]], axis=1)
-    la = np.abs(legacy) > EDGE_THRESHOLD
-    out['_legacy_atEdge'] = la.any(axis=1)
-    out['_legacy_nPix'] = la.sum(axis=1).astype(np.int64)
-    out['_legacy_charge'] = np.where(la.any(axis=1), legacy.sum(axis=1), 0.0)
+    # Reproduce the converter's stored flags (it duplicates corner pixels) for both
+    # SHAPE settings: 'old' = (48, 192) transposed, 'fixed' = (192, 48).
+    for tag, shape in (('old', (n, NX, NY)), ('fixed', (n, NY, NX))):
+        m = batch.reshape(shape)
+        edges = np.concatenate([m[:, 0, :], m[:, -1, :], m[:, :, 0], m[:, :, -1]], axis=1)
+        a = np.abs(edges) > EDGE_THRESHOLD
+        out[f'_{tag}_atEdge'] = a.any(axis=1)
+        out[f'_{tag}_nPix'] = a.sum(axis=1).astype(np.int64)
+        out[f'_{tag}_charge'] = np.where(a.any(axis=1), edges.sum(axis=1), 0.0)
     out['_finite'] = np.isfinite(batch).all(axis=1)
     return out
  
@@ -171,7 +194,7 @@ def check_labels(index, df, rep):
     missing = [c for c in LABEL_COLUMNS if c not in df.columns]
     if missing:
         rep.add(index, 'FAIL', f'labels missing columns {missing}')
-        return False
+        return None
     extra = [c for c in df.columns if c not in LABEL_COLUMNS]
     if extra:
         rep.add(index, 'INFO', f'labels has extra columns {extra}')
@@ -206,35 +229,50 @@ def check_labels(index, df, rep):
     nc = ((df['cotAlpha'].abs() > COT_MAX) | (df['cotBeta'].abs() > COT_MAX)).sum()
     if nc:
         rep.add(index, 'FAIL', f'{nc} rows with |cot| > {COT_MAX} (driver should have skipped them)')
-    if not (df['number_eh_pairs'] > 0).all():
-        rep.add(index, 'WARN', f'{(df["number_eh_pairs"] <= 0).sum()} rows with number_eh_pairs <= 0')
+    extra = {}
+    neh = df['number_eh_pairs'].to_numpy(np.float64)
+    zero = int((neh <= 0).sum())
+    if zero:
+        rep.add(index, 'FAIL' if zero > 0.01 * len(df) else 'WARN',
+                f'{zero} of {len(df)} tracks ({zero / len(df):.0%}) made no e-h pairs. A track crossing '
+                f'{THICK:g} um of Si should make thousands. Most likely cause: PixelAV could not find '
+                'SIRUTH.SPR in its working directory (look for "cant find SIRUTH.SPR" in the '
+                'pixelav_block_NN.log); it then runs with a flat placeholder cross-section')
+    path = THICK * np.sqrt(1 + df['cotAlpha'].to_numpy() ** 2 + df['cotBeta'].to_numpy() ** 2)
+    if (neh > 0).any():
+        extra['med_eh_per_um'] = float(np.median(neh[neh > 0] / path[neh > 0]))
+        if not 40 <= extra['med_eh_per_um'] <= 200:
+            rep.add(index, 'WARN', f'median e-h pairs per um of track = {extra["med_eh_per_um"]:.0f} '
+                                   '(silicon MIP: roughly 70-110)')
+    extra['frac_no_eh'] = zero / len(df)
     if (df['pt'] == 0).any():
         rep.add(index, 'WARN', f'{(df["pt"] == 0).sum()} rows with pt == 0 (charge sign lost)')
-    return True
+    return extra
+ 
+ 
+MAX_RG_EVENTS = 50     # never read a recon3D row group holding more events than this
  
  
 def check_recon3d(index, path, samples, rep):
-    """samples: {row: recon2D row array}. Returns list of per-sample dicts."""
+    """samples: {row: recon2D row array}. Reads only the row group holding each
+    sampled event (local_convert.py writes one event per row group)."""
     pf = pq.ParquetFile(path)
     md = pf.metadata
-    rows = sorted(samples)
-    got = {}
-    if md.num_row_groups == md.num_rows:          # converter writes one event per row group
-        for r in rows:
-            got[r] = pf.read_row_group(r, columns=['charge']).column(0)
-    else:
-        want, pos = set(rows), 0
-        for batch in pf.iter_batches(batch_size=1, columns=['charge']):
-            if pos in want:
-                got[pos] = batch.column(0)
-            pos += 1
-            if pos > rows[-1]:
-                break
+    starts = np.cumsum([0] + [md.row_group(g).num_rows for g in range(md.num_row_groups)])
     results = []
-    for r in rows:
-        col = got[r]
+    for r in sorted(samples):
+        g = int(np.searchsorted(starts, r, side='right') - 1)
+        size = md.row_group(g).num_rows
+        if size > MAX_RG_EVENTS:
+            rep.add(index, 'WARN', f'recon3D row {r} is stored in a row group of {size} events '
+                                   f'(~{size * NT * PIXELS * 8 / 1e9:.0f} GB in memory); spot check skipped. '
+                                   'This file was not written one event per row group like local_convert.py does')
+            continue
+        print(f'    recon3D: reading event {r} (row group {g}/{md.num_row_groups}) ...', flush=True)
+        col = pf.read_row_group(g, columns=['charge']).column(0)
         if isinstance(col, pa.ChunkedArray):
             col = pa.concat_arrays(col.chunks)
+        col = col.slice(int(r - starts[g]), 1)
         n = pc.list_value_length(col).to_numpy(zero_copy_only=False)
         if col.null_count or n.size != 1 or n[0] != NT * PIXELS:
             rep.add(index, 'FAIL', f'recon3D row {r}: list length {n.tolist()} != {NT * PIXELS}')
@@ -286,9 +324,14 @@ def process_index(index, input_dir, args, rep):
              'shape_metadata': meta.get(b'shape', b'?').decode(),
              'max_events': None if success is None else success.get('max_events')}
  
+    t0 = time.time()
+    progress = lambda msg: print(f'    {msg} [{time.time() - t0:.0f} s]', flush=True)
     labels = pd.read_parquet(paths['labels'])
-    if not check_labels(index, labels, rep):
+    extra = check_labels(index, labels, rep)
+    if extra is None:
         return None, None
+    stats.update(extra)
+    progress(f'labels: {n} rows checked')
  
     # recon2D pass
     k3d = min(max(args.check_3d, 0), n)
@@ -305,6 +348,7 @@ def process_index(index, input_dir, args, rep):
         rep.add(index, 'FAIL', f'recon2D: {err}')
         return None, None
     d = {k: np.concatenate([p[k] for p in parts]) for k in parts[0]}
+    progress('recon2D: sizes computed')
  
     bad = (~d['_finite']).sum()
     if bad:
@@ -313,17 +357,21 @@ def process_index(index, input_dir, args, rep):
     if empty:
         rep.add(index, 'WARN', f'{empty} clusters with no positive charge in the matrix')
  
-    # Stored edge flags: do they reproduce with the converter's (48,192) reshape?
+    # Stored edge flags: which converter SHAPE produced them?
     st_at = labels['original_atEdge'].to_numpy(bool)
     st_n = labels['nPixOriginalAbove1e_atEdge'].to_numpy(np.int64)
     st_q = labels['chargeOriginal_atEdge'].to_numpy(np.float64)
-    legacy_ok = (np.array_equal(st_at, d['_legacy_atEdge']) and np.array_equal(st_n, d['_legacy_nPix'])
-                 and np.allclose(st_q, d['_legacy_charge'], atol=1e-6))
+    layout = 'neither'
+    for tag in ('fixed', 'old'):
+        if (np.array_equal(st_at, d[f'_{tag}_atEdge']) and np.array_equal(st_n, d[f'_{tag}_nPix'])
+                and np.allclose(st_q, d[f'_{tag}_charge'], atol=1e-6)):
+            layout = tag
+            break
     disagree = (st_at != d['atEdge']).sum()
-    stats.update(stored_edge_reproduced=legacy_ok,
+    stats.update(stored_edge_layout=layout,
                  atEdge_frac=d['atEdge'].mean(), stored_atEdge_frac=st_at.mean(),
                  edge_flag_disagree=int(disagree))
-    if not legacy_ok:
+    if layout == 'neither':
         rep.add(index, 'WARN', 'stored original_atEdge columns cannot be reproduced from recon2D with '
                                "the converter's logic: labels and recon2D rows may not belong together")
  
@@ -336,13 +384,19 @@ def process_index(index, input_dir, args, rep):
         dyT = np.abs(d['_y_centroid_T'][sel] - labels['y-midplane'].to_numpy()[sel]) / PITCH_Y
         stats.update(med_dx_pix=np.median(dx), med_dy_pix=np.median(dy),
                      med_dx_pix_T=np.median(dxT), med_dy_pix_T=np.median(dyT))
-        good = stats['med_dx_pix'] < 1.0 and stats['med_dy_pix'] < 3.0
-        if not good:
-            better_T = stats['med_dx_pix_T'] + stats['med_dy_pix_T'] < stats['med_dx_pix'] + stats['med_dy_pix']
+        res = stats['med_dx_pix'] + stats['med_dy_pix']
+        res_T = stats['med_dx_pix_T'] + stats['med_dy_pix_T']
+        on_track = stats['med_dx_pix'] < 1.0 and stats['med_dy_pix'] < 3.0
+        if res_T <= 2 * res:
             rep.add(index, 'FAIL',
-                    f'charge centroid does not follow the truth position under the (192,48) layout '
-                    f'(median |dx|={stats["med_dx_pix"]:.2f} px, |dy|={stats["med_dy_pix"]:.2f} px'
-                    + ('; the (48,192) reading matches better: x/y-size would be swapped/wrong)' if better_T else ')'))
+                    f'pixel layout: reading the data as (192 y, 48 x) does not clearly beat (48, 192) '
+                    f'(median |d| {res:.2f} vs {res_T:.2f} px): x/y-size may be swapped')
+        elif not on_track:
+            rep.add(index, 'FAIL',
+                    f'charge is not centred where the track crosses the sensor midplane (median '
+                    f'|dx|={stats["med_dx_pix"]:.2f} px, |dy|={stats["med_dy_pix"]:.2f} px; expect '
+                    f'< 1 px and < 3 px). The pixel layout is fine ((48,192) reading is worse: '
+                    f'{res_T:.1f} px); the deposited charge itself looks wrong')
         # Size vs angle sanity: y-size ~ 8|cotBeta| + O(1), x-size ~ 2|cotAlpha| + O(1).
         ry = d['y-size'][sel] - THICK / PITCH_Y * labels['cotBeta'].abs().to_numpy()[sel]
         rx = d['x-size'][sel] - THICK / PITCH_X * labels['cotAlpha'].abs().to_numpy()[sel]
@@ -361,6 +415,7 @@ def process_index(index, input_dir, args, rep):
                 stats['q_1ns_over_final'] = np.median([r['q_1ns_over_final'] for r in res])
         except Exception as err:          # report, don't abort the whole run
             rep.add(index, 'FAIL', f'recon3D spot check failed: {type(err).__name__}: {err}')
+        progress('recon3D: spot check done')
  
     out = labels.copy()
     out.insert(0, 'row', np.arange(n, dtype=np.int64))
@@ -386,6 +441,9 @@ def main(argv=None):
     ap.add_argument('--check-3d', type=int, default=3,
                     help='recon3D events to spot-check per file, evenly spaced (default 3; 0 to skip)')
     ap.add_argument('--batch-size', type=int, default=500, help='recon2D rows per read batch')
+    ap.add_argument('--no-cache', action='store_true',
+                    help='redo every file; by default finished files are reused from '
+                         'OUTPUT_DIR/per_file/ if their inputs and options are unchanged')
     args = ap.parse_args(argv)
  
     if not args.input_dir.is_dir():
@@ -394,16 +452,35 @@ def main(argv=None):
     if not indices:
         ap.error(f'no labels_d*.parquet files in {args.input_dir}')
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = args.output_dir / 'per_file'
+    cache_dir.mkdir(exist_ok=True)
  
     rep = Report()
     frames, stats = [], []
     print(f'Checking {len(indices)} indices d{indices[0]}..d{indices[-1]} in {args.input_dir}', flush=True)
     for index in indices:
+        key = cache_key(args, index)
+        cj, cp = cache_dir / f'd{index}.json', cache_dir / f'd{index}.parquet'
+        if not args.no_cache and cj.is_file():
+            cached = json.loads(cj.read_text())
+            if cached.get('key') == key and (cached['stats'] is None or cp.is_file()):
+                print(f'd{index} (reused from {cache_dir})', flush=True)
+                for level, message in cached['issues']:
+                    rep.add(index, level, message)
+                if cached['stats'] is not None:
+                    frames.append(pd.read_parquet(cp))
+                    stats.append(cached['stats'])
+                continue
         print(f'd{index}', flush=True)
+        before = len(rep.issues)
         df, st = process_index(index, args.input_dir, args, rep)
         if df is not None:
             frames.append(df)
             stats.append(st)
+            df.to_parquet(cp, index=False)
+        cj.write_text(json.dumps({'key': key, 'stats': st,     # written last: marks the file done
+                                  'issues': [[lvl, msg] for _, lvl, msg in rep.issues[before:]]},
+                                 default=lambda o: o.item() if hasattr(o, 'item') else str(o)))
  
     if not frames:
         print('No usable files.', flush=True)
@@ -419,13 +496,21 @@ def main(argv=None):
         low = st.index[st['rows'] < 0.8 * med].tolist()
         if low:
             rep.add(None, 'WARN', f'files with < 80% of the median row count ({med:.0f}): {low}')
-    if 'med_dx_pix' in st and (st['med_dx_pix'] < 1).all() and (st['med_dy_pix'] < 3).all():
-        rep.add(None, 'INFO', 'pixel layout confirmed: charge centroids follow the truth position '
-                              'when the flat list is read as (192 y-rows, 48 x-cols)')
-    if st['edge_flag_disagree'].sum() and st['stored_edge_reproduced'].all():
-        rep.add(None, 'INFO', f'{int(st["edge_flag_disagree"].sum())} events change edge status: stored '
-                              'original_atEdge was computed on the transposed (48,192) reshape. Use the new '
-                              'atEdge column instead.')
+    if 'med_dx_pix' in st and ((st['med_dx_pix_T'] + st['med_dy_pix_T'])
+                               > 2 * (st['med_dx_pix'] + st['med_dy_pix'])).all():
+        rep.add(None, 'INFO', 'pixel layout confirmed: charge centroids are far closer to the truth '
+                              'position when the flat list is read as (192 y-rows, 48 x-cols)')
+    if 'frac_no_eh' in st and (st['frac_no_eh'] > 0.01).any():
+        bad = st.index[st['frac_no_eh'] > 0.01].tolist()
+        rep.add(None, 'INFO', f'{len(bad)} of {len(st)} files have tracks with zero e-h pairs: '
+                              f'{bad[0]}..{bad[-1]}' if len(bad) > 1 else f'1 file has tracks with zero e-h pairs: {bad}')
+    old = st['stored_edge_layout'] == 'old'
+    if old.any():
+        n_changed = int(st.loc[old, 'edge_flag_disagree'].sum())
+        rep.add(None, 'INFO', f'{old.sum()} files were converted with SHAPE = (400, 48, 192): their stored '
+                              f'original_atEdge is computed on a transposed grid ({n_changed} events change '
+                              'edge status). Use the new atEdge column; set SHAPE = (400, 192, 48) in '
+                              'local_convert.py for future conversions.')
  
     out_parquet = args.output_dir / 'labels_with_sizes.parquet'
     combined.to_parquet(out_parquet, index=False)
@@ -450,6 +535,8 @@ def main(argv=None):
         '  *_T: same for the transposed (48,192) reading; should be much larger',
         '  med_ysize_minus_geom: median(y-size - 8|cotBeta|); med_xsize_minus_geom: median(x-size - 2|cotAlpha|)',
         '  q_1ns_over_final: recon3D total charge at 1 ns / at 4 ns (spot-checked events)',
+        '  frac_no_eh: fraction of tracks with number_eh_pairs == 0 (should be 0)',
+        '  med_eh_per_um: median e-h pairs per um of track path (silicon MIP: roughly 70-110)',
         table, '', 'Cluster sizes (all events):', summary, '',
         f'Wrote {out_parquet}',
     ]
