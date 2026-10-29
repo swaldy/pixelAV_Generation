@@ -61,6 +61,14 @@ python3 run_pixelav_parallel.py
 
 depending on where you ran this, you might need to scp all these files to eos lxplus. next steps require lxplus.
 
+To copy files do this command: 
+
+```
+D=pixelav_48x192_10ps/gzip_files_48_192_center
+scp $D/pixel_clusters_d164*.out.gz
+swaldych@lxplus.cern.ch:/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps/gzip_files_48_192_center/
+```
+
 ## Step 3: Convert files
 
 test a few first on condor
