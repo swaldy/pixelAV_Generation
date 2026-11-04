@@ -65,8 +65,7 @@ To copy files do this command:
 
 ```
 D=pixelav_48x192_10ps/gzip_files_48_192_center
-scp $D/pixel_clusters_d164*.out.gz
-swaldych@lxplus.cern.ch:/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps/gzip_files_48_192_center/
+scp $D/pixel_clusters_d164*.out.gz swaldych@lxplus.cern.ch:/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps/gzip_files_48_192_10ps_no_center
 ```
 
 ## Step 3: Convert files
