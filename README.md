@@ -68,6 +68,8 @@ D=pixelav_48x192_10ps/gzip_files_48_192_center
 scp $D/pixel_clusters_d164*.out.gz swaldych@lxplus.cern.ch:/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps/gzip_files_48_192_10ps_no_center
 ```
 
+Copying can take over 2 hours.
+
 ## Step 3: Convert files
 
 test a few first on condor
