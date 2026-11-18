@@ -21,7 +21,7 @@ ulimit -c 0
 
 endpoint=root://eosuser.cern.ch
 base_dir=/eos/user/s/swaldych/smart_pix/pixelav_48x192_10ps
-input_dir="$base_dir/gzip_files_48_192_center"
+input_dir="$base_dir/gzip_files_48_192_10ps_no_center"
 # Unique run directory separates list-column outputs from legacy Parquet files;
 # kept out of input_dir so outputs never mix with the gzip inputs.
 remote_dir="$base_dir/parquet_streaming/$run_id/unflipped"
